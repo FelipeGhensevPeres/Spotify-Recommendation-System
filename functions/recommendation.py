@@ -1,21 +1,23 @@
 import pandas as pd
 
+MAX_NEIGHBORS = 30
+
 def recommend_by_index(indice,
                     df_modelagem_escalado,
                     modelo_NN,
                     df_spotify,
-                    qtd_musicas_buscar=6):
+                    qtd_musicas_buscar=10):
     
-    if qtd_musicas_buscar < 1:
-        raise ValueError
-    
+    if qtd_musicas_buscar < 1 or qtd_musicas_buscar > MAX_NEIGHBORS:
+        raise ValueError(f"NÃO É PERMITIDO A QUANTIDADE DE RECOMENDAÇÕES MENORES QUE 1 E MAIORES QUE {MAX_NEIGHBORS}")
     musica = df_modelagem_escalado[indice]
     
     genero_musical = df_spotify.iloc[indice]["track_genre"]
     
     musica = musica.reshape(1,-1)
     
-    distancias, vizinhos = modelo_NN.kneighbors(musica,n_neighbors=qtd_musicas_buscar)
+    distancias, vizinhos = modelo_NN.kneighbors(musica,
+                                                n_neighbors=MAX_NEIGHBORS)
     
     df_recommendation_music = df_spotify.iloc[vizinhos[0]][["track_name", "artists", "album_name", "track_genre"]]
 
@@ -28,6 +30,7 @@ def recommend_by_index(indice,
     outros_generos = df_recommendation_music[~condicao_genero]
 
     resultado = pd.concat([mesmo_genero, outros_generos])
-
+    
+    resultado = resultado.iloc[:qtd_musicas_buscar]
     
     return resultado
