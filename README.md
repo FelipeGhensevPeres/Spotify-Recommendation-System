@@ -1,19 +1,19 @@
 # 🎵 Spotify Recommendation System
 
-Projeto de Machine Learning para recomendação de músicas utilizando características musicais extraídas do Spotify.
+Projeto de Machine Learning para recomendação de músicas usando características musicais extraídas do Spotify.
 
-O objetivo foi desenvolver um sistema que identifica músicas semelhantes a uma faixa de referência utilizando técnicas de recomendação baseada em conteúdo (*Content-Based Filtering*).
+O objetivo foi desenvolver um sistema que identifica músicas semelhantes a uma referência utilizando técnicas de recomendação baseada em conteúdo (*Content-Based Filtering*).
 
 ---
 
 # 🎯 Problema de Negócio
 
-Plataformas de streaming musical utilizam sistemas de recomendação para aumentar o engajamento dos usuários e facilitar a descoberta de novas músicas.
+Plataformas de streaming musical utilizam sistemas de recomendação aumentando o engajamento dos usuários e facilitando a descoberta de novas músicas.
 
-Nesse projeto, busquei responder algumas perguntas -
+Nesse projeto, busquei responder algumas perguntas --
 
 * É possível recomendar músicas semelhantes usando apenas características musicais?
-* Quais atributos melhor representam a similaridade entre faixas?
+* Quais atributos melhor representam a similaridade entre músicas?
 * Como medir proximidade entre músicas?
 * O algoritmo Nearest Neighbors consegue produzir recomendações coerentes?
 
@@ -39,6 +39,10 @@ spotify-recommendation-system/
 ├── data/
 │   └── dataset.csv
 │
+├── functions/
+│   ├── __init__.py
+│   └── recommendation.py
+│
 ├── images/
 │   ├── Believer_recommendations_scatter.png
 │   ├── features_histogram.png
@@ -59,9 +63,9 @@ spotify-recommendation-system/
 
 ## 🔹 Análise Exploratória (EDA)
 
-Realizei uma análise inicial do dataset para entender a estrutura.
+Fiz uma análise inicial do dataset para entender sua estrutura.
 
-Principais verificações -
+Principais verificações --
 
 * Quantidade de registros e atributos
 * Valores nulos
@@ -69,7 +73,7 @@ Principais verificações -
 * Distribuição das variáveis
 * Características dos gêneros musicais
 
-Também construí histogramas para ver o comportamento das principais features utilizadas pelo modelo.
+Também construí histogramas para analisar o comportamento das principais features utilizadas pelo modelo.
 
 ### Features analisadas
 
@@ -87,20 +91,20 @@ Também construí histogramas para ver o comportamento das principais features u
 
 ## 🔹 Limpeza e Pré-processamento
 
-As seguintes etapas foram realizadas - 
+As seguintes etapas foram realizadas -
 
 * Remoção de registros com valores nulos
 * Remoção da coluna auxiliar `Unnamed: 0`
 * Seleção das features relevantes para recomendação
-* Padronização dos dados utilizando StandardScaler
+* Padronização dos dados utilizando **StandardScaler**
 
-O escalonamento foi necessário porque algumas variáveis possuem escalas muito diferentes, o que poderia impactar o cálculo das distâncias entre músicas.
+O escalonamento foi necessário porque algumas variáveis possuem escalas muito diferentes, o que poderia impactar diretamente o cálculo das distâncias entre músicas.
 
 ---
 
 ## 🔹 Construção do Modelo
 
-O algoritmo escolhido foi -
+O algoritmo escolhido foi --
 
 ### Nearest Neighbors (KNN)
 
@@ -108,57 +112,110 @@ O modelo calcula a distância entre músicas utilizando suas características mu
 
 Músicas com menor distância são consideradas mais semelhantes.
 
-Configuração utilizada:
+Configuração que usei para o treinamento:
 
 ```python
 NearestNeighbors(
-    n_neighbors=6,
     metric="euclidean"
 )
 ```
 
-A distância Euclidiana foi uma métrica principal para medir a similaridade entre as faixas.
+Durante a geração das recomendações, o sistema busca inicialmente um conjunto maior de vizinhos e depois reorganiza os resultados para produzir recomendações mais relevantes.
 
 ---
 
 # 📊 Visualização com PCA
 
-Como cada música é representada por 9 características musicais, apliquei a técnica PCA (*Principal Component Analysis*) para reduzir os dados para duas dimensões.
+Como cada música é representada por nove características musicais, usei a técnica PCA (*Principal Component Analysis*) reduzindo os dados para duas dimensões.
 
-Isso facilitou visualizar - 
+Isso facilitou visualizar --
 
 * A distribuição geral das músicas
 * A posição da música consultada
 * A proximidade das recomendações geradas
 
-As duas componentes principais preservaram aproximadamente 48% da variabilidade original dos dados.
+As duas componentes principais preservaram **48% da variabilidade original dos dados**.
 
 ---
 
 # 🔍 Sistema de Recomendação
 
-Desenvolvi uma função para consultar o modelo treinado:
+O sistema foi dividido em duas responsabilidades principais --
+
+### recommendation_song()
+
+Responsável por -- 
+
+* localizar a música pesquisada;
+* validar artista (se for informado);
+* levar a busca ao mecanismo de recomendação.
+
+### recommend_by_index()
+
+Responsável por -- 
+
+* localizar os vizinhos com o Nearest Neighbors;
+* priorizar recomendações do mesmo gênero musical;
+* limitar a quantidade de recomendações retornadas;
+* validar a quantidade solicitada pelo usuário.
+
+A função principal pode ser utilizada assim -- 
 
 ```python
-recommendation_song(song_name, artist="")
+recommendation_song(
+    song_name="Believer",
+    qtd_musicas_buscar=10
+)
 ```
 
-A função permite - 
-
-* Buscar músicas semelhantes pelo nome
-* Filtrar por artista quando necessário
-* Retornar recomendações com - 
-
-  * Nome da música
-  * Artista
-  * Álbum
-  * Gênero musical
-
-Exemplo:
+ou
 
 ```python
-recommendation_song("Believer")
+recommendation_song(
+    song_name="Shape Of You",
+    artist="Andrew Foy",
+    qtd_musicas_buscar=10
+)
 ```
+
+Cada recomendação retorna --
+
+* Nome da música
+* Artista
+* Álbum
+* Gênero musical
+
+---
+
+# 🚀 Melhorias Implementadas
+
+Depois da primeira versão do projeto, adicionei melhorias o sistema ficar mais flexível e produzir recomendações mais relevantes.
+
+## Priorização por gênero musical
+
+O algoritmo continua encontrando músicas semelhantes usando apenas características sonoras.
+
+Após a busca dos vizinhos, as recomendações são reorganizadas para priorizar músicas pertencentes ao mesmo `track_genre` da música consultada.
+
+Caso não existam recomendações suficientes do mesmo gênero, músicas de outros gêneros também são aparecem para preservar a quantidade de resultados.
+
+---
+
+## Quantidade configurável de recomendações
+
+O usuário pode escolher quantas recomendações deseja receber através do parâmetro --
+
+```python
+qtd_musicas_buscar
+```
+
+Além disso, a função realiza validações para impedir valores inválidos.
+
+---
+
+## Refatoração
+
+Coloquei parte da lógica da função principal em um módulo separado (`functions/recommendation.py`), reduzindo duplicação de código e deixando o projeto mais organizado e reutilizável.
 
 ---
 
@@ -166,9 +223,9 @@ recommendation_song("Believer")
 
 ## 🎧 Similaridade Musical
 
-As recomendações geradas apresentaram características bem próximas das músicas consultadas.
+As recomendações apresentaram características bem próximas das músicas consultadas.
 
-As variáveis que mais contribuíram para a formação dos grupos de músicas semelhantes foram:
+As variáveis que mais contribuíram para a formação dos grupos de músicas semelhantes foram --
 
 * Danceability
 * Energy
@@ -176,13 +233,14 @@ As variáveis que mais contribuíram para a formação dos grupos de músicas se
 * Valence
 * Tempo
 
+Mesmo que algumas features apresentem forte concentração em valores baixos (como `speechiness`, `instrumentalness` e `liveness`), elas ainda ajudam para diferenciar músicas específicas, então foram mantidas no modelo.
+
 ---
 
 ## 📈 PCA
 
 A projeção em duas dimensões mostrou que as músicas recomendadas tendem a ocupar regiões próximas da música de referência.
 
-Isso reforça que o algoritmo está encontrando vizinhos coerentes dentro do espaço de características musicais.
 
 ---
 
@@ -190,35 +248,36 @@ Isso reforça que o algoritmo está encontrando vizinhos coerentes dentro do esp
 
 Durante a análise foi identificado que algumas músicas aparecem mais de uma vez na base de dados.
 
-Em vários casos isso ocorre porque -
+Em vários casos isso acontece pois --
 
-* A música pertence a diferentes gêneros
-* A música aparece em álbuns diferentes
-* Existem versões diferentes cadastradas na plataforma
+* A música pertence a diferentes gêneros;
+* A música aparece em álbuns diferentes;
+* Existem versões diferentes cadastradas na plataforma.
 
-Por esse motivo, o campo `album_name` foi incluído nos resultados das recomendações.
+Por isso, inclui o campo `album_name` nas recomendações.
 
 ---
 
 # 🤖 Modelo Final
 
-O sistema final utiliza - 
+O sistema final --
 
 * Content-Based Filtering
 * StandardScaler
 * Nearest Neighbors
 * Distância Euclidiana
-
-A solução permite recomendar músicas semelhantes com base em suas características sonoras.
+* Priorização por gênero musical
+* Arquitetura modular para o mecanismo de recomendação
 
 ---
 
 # 💡 Conclusões
 
-Com base na análise, foi possível concluir que -
+Com base na análise, foi possível concluir que -- 
 
-* Características musicais são suficientes para gerar recomendações coerentes
-* O algoritmo Nearest Neighbors apresentou bons resultados para este problema
-* O escalonamento dos dados foi importantíssimo para o cálculo correto das distâncias
-* PCA foi uma ferramenta útil para visualizar os agrupamentos formados pelo modelo
-* O sistema consegue recomendar músicas semelhantes sem depender de avaliações ou histórico de usuários
+* características musicais são suficientes para gerar recomendações coerentes;
+* o algoritmo Nearest Neighbors apresentou bons resultados para este problema;
+* o escalonamento dos dados foi essencial para o cálculo correto das distâncias;
+* PCA foi uma ferramenta útil para visualizar os agrupamentos formados pelo modelo;
+* priorizar músicas do mesmo gênero melhorou a experiência das recomendações sem alterar o algoritmo de Machine Learning;
+* a modularização fez com que o projeto ficasse mais organizado e reutilizável.
